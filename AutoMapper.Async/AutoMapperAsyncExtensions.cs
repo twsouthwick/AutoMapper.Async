@@ -21,7 +21,7 @@ namespace AutoMapper
 
             });
 
-            await context.WhenAllAsync();
+            await context.WhenAllAsync().ConfigureAwait(false);
 
             return result;
         }

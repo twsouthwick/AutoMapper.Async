@@ -5,8 +5,7 @@ using Xunit;
 
 namespace AutoMapper.Async.Tests
 {
-
-    public class UnitTest1
+    public class TypeConverterTests
     {
         [Fact]
         public void InvalidContext()
@@ -40,7 +39,6 @@ namespace AutoMapper.Async.Tests
             Assert.Equal(a.Item1, b.Item1);
         }
 
-
         public class A
         {
             public string Item1 { get; set; }
@@ -51,12 +49,11 @@ namespace AutoMapper.Async.Tests
             public string Item1 { get; set; }
         }
 
-
         private class AsyncA : IAsyncTypeConverter<A, B>
         {
             public async Task ResolveAsync(A source, B destination, ResolutionContext context, CancellationToken token)
             {
-                await Task.Delay(100);
+                await Task.Yield();
 
                 destination.Item1 = source.Item1;
             }
