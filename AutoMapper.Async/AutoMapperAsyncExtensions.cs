@@ -8,20 +8,8 @@ namespace AutoMapper
     {
         internal static readonly string ItemKey = Guid.NewGuid().ToString();
 
-        internal static AsyncContext GetAsyncContext(this ResolutionContext context)
-        {
-            if (context.Items.TryGetValue(ItemKey, out var asyncCtx) && asyncCtx is AsyncContext memberAsyncCtx)
-            {
-                return memberAsyncCtx;
-            }
-
-            throw new InvalidOperationException("Value resolution must occur in an async context.");
-        }
-
-        public static AsyncMapFromBuilder<TSource, TDestination, TMember> MapFromAsync<TSource, TDestination, TMember>(this IMemberConfigurationExpression<TSource, TDestination, TMember> config)
-        {
-            return new AsyncMapFromBuilder<TSource, TDestination, TMember>(config);
-        }
+        public static AsyncMappingExpression<TSource, TDestination> Async<TSource, TDestination>(this IMappingExpressionBase<TSource, TDestination, IMappingExpression<TSource, TDestination>> mapping)
+            => new AsyncMappingExpression<TSource, TDestination>(mapping);
 
         public static async Task<TDestination> MapAsync<TDestination>(this IMapper mapper, object obj, CancellationToken token = default)
         {
@@ -30,27 +18,22 @@ namespace AutoMapper
             var result = mapper.Map<TDestination>(obj, opts =>
             {
                 opts.Items.Add(ItemKey, context);
+
             });
 
             await context.WhenAllAsync();
 
             return result;
         }
-    }
 
-    public readonly struct AsyncMapFromBuilder<TSource, TDestination, TMember>
-    {
-        private readonly IMemberConfigurationExpression<TSource, TDestination, TMember> _configuration;
-
-        public AsyncMapFromBuilder(IMemberConfigurationExpression<TSource, TDestination, TMember> configuration)
+        internal static AsyncContext GetAsyncContext(this ResolutionContext context)
         {
-            _configuration = configuration;
-        }
+            if (context.Items.TryGetValue(ItemKey, out var asyncCtx) && asyncCtx is AsyncContext memberAsyncCtx)
+            {
+                return memberAsyncCtx;
+            }
 
-        public void WithResolver<TResolver>(TResolver resolver)
-            where TResolver : IAsyncValueResolver<TSource, TDestination, TMember>
-        {
-            _configuration.MapFrom(new AsyncCustomResolver<TSource, TDestination, TMember>(resolver));
+            throw new InvalidOperationException("Value resolution must occur in an async context.");
         }
     }
 }

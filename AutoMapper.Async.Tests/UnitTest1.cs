@@ -5,31 +5,32 @@ using Xunit;
 
 namespace AutoMapper.Async.Tests
 {
+
     public class UnitTest1
     {
         [Fact]
         public void InvalidContext()
         {
-            var mapper = new MapperConfiguration(opt =>
+            var mapper = new MapperConfiguration(cfg =>
             {
-                opt.CreateMap<A, B>()
-                    .ForMember(dest => dest.Item1, o => o.MapFromAsync().WithResolver(new AsyncA()));
+                cfg.CreateMap<A, B>()
+                    .Async()
+                    .ConvertUsing<AsyncA>();
             }).CreateMapper();
 
             var a = new A { Item1 = Guid.NewGuid().ToString() };
 
-            var exception = Assert.Throws<AutoMapperMappingException>(() => mapper.Map<B>(a));
-
-            Assert.IsType<InvalidOperationException>(exception.InnerException);
+            Assert.Throws<InvalidOperationException>(() => mapper.Map<B>(a));
         }
 
         [Fact]
         public async Task SimpleAsync()
         {
-            var mapper = new MapperConfiguration(opt =>
+            var mapper = new MapperConfiguration(cfg =>
             {
-                opt.CreateMap<A, B>()
-                    .ForMember(dest => dest.Item1, o => o.MapFromAsync().WithResolver(new AsyncA()));
+                cfg.CreateMap<A, B>()
+                    .Async()
+                    .ConvertUsing<AsyncA>();
             }).CreateMapper();
 
             var a = new A { Item1 = Guid.NewGuid().ToString() };
@@ -50,13 +51,14 @@ namespace AutoMapper.Async.Tests
             public string Item1 { get; set; }
         }
 
-        private class AsyncA : IAsyncValueResolver<A, B, string>
-        {
-            public async Task<string> ResolveAsync(A source, B destination, string destMember, ResolutionContext context, CancellationToken token)
-            {
-                //await Task.Delay(100);
 
-                return source.Item1;
+        private class AsyncA : IAsyncTypeConverter<A, B>
+        {
+            public async Task ResolveAsync(A source, B destination, ResolutionContext context, CancellationToken token)
+            {
+                await Task.Delay(100);
+
+                destination.Item1 = source.Item1;
             }
         }
     }
