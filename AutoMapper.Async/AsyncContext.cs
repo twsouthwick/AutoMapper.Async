@@ -9,6 +9,7 @@ namespace AutoMapper
     {
         private readonly List<Task> _tasks;
         private readonly int _threadId;
+        private bool _locked;
 
         public AsyncContext(CancellationToken token)
         {
@@ -26,13 +27,23 @@ namespace AutoMapper
             _tasks.Add(task);
         }
 
-        public Task WhenAllAsync() => Task.WhenAll(_tasks);
+        public Task WhenAllAsync()
+        {
+            _locked = true;
+
+            return Task.WhenAll(_tasks);
+        }
 
         private void VerifyThread()
         {
             if (_threadId != Thread.CurrentThread.ManagedThreadId)
             {
-                throw new InvalidOperationException("Must be run on the same thread");
+                throw new InvalidOperationException("Must be run on the same thread.");
+            }
+
+            if (_locked)
+            {
+                throw new InvalidOperationException("Mapping must be completed before items are awaited.");
             }
         }
     }
