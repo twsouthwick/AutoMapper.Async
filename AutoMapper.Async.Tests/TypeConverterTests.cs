@@ -14,7 +14,7 @@ namespace AutoMapper.Async.Tests
             {
                 cfg.CreateMap<A, B>()
                     .Async()
-                    .ConvertUsing<AsyncA>();
+                    .ConvertUsing<AsyncTypeConverterA>();
             }).CreateMapper();
 
             var a = new A { Item1 = Guid.NewGuid().ToString() };
@@ -23,13 +23,13 @@ namespace AutoMapper.Async.Tests
         }
 
         [Fact]
-        public async Task SimpleAsync()
+        public async Task SimpleAsyncTypeConverter()
         {
             var mapper = new MapperConfiguration(cfg =>
             {
                 cfg.CreateMap<A, B>()
                     .Async()
-                    .ConvertUsing<AsyncA>();
+                    .ConvertUsing<AsyncTypeConverterA>();
             }).CreateMapper();
 
             var a = new A { Item1 = Guid.NewGuid().ToString() };
@@ -38,6 +38,23 @@ namespace AutoMapper.Async.Tests
 
             Assert.Equal(a.Item1, b.Item1);
         }
+
+        [Fact]
+        public async Task SimpleAsyncValueResolver()
+        {
+            var mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<A, B>()
+                    .ForMember(m => m.Item1, opt => opt.Async().MapFrom<AsyncValueResolverA>());
+            }).CreateMapper();
+
+            var a = new A { Item1 = Guid.NewGuid().ToString() };
+
+            var b = await mapper.MapAsync<B>(a);
+
+            Assert.Equal(a.Item1, b.Item1);
+        }
+
 
         public class A
         {
@@ -49,7 +66,17 @@ namespace AutoMapper.Async.Tests
             public string Item1 { get; set; }
         }
 
-        private class AsyncA : IAsyncTypeConverter<A, B>
+        private class AsyncValueResolverA : IAsyncValueResolver<A, B, string>
+        {
+            public async Task<string> ResolveAsync(A source, B destination, string destMember, ResolutionContext context, CancellationToken token)
+            {
+                await Task.Yield();
+
+                return source.Item1;
+            }
+        }
+
+        private class AsyncTypeConverterA : IAsyncTypeConverter<A, B>
         {
             public async Task ResolveAsync(A source, B destination, ResolutionContext context, CancellationToken token)
             {

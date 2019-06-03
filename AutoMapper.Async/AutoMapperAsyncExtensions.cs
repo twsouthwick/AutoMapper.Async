@@ -11,6 +11,9 @@ namespace AutoMapper
         public static AsyncMappingExpression<TSource, TDestination> Async<TSource, TDestination>(this IMappingExpressionBase<TSource, TDestination, IMappingExpression<TSource, TDestination>> mapping)
             => new AsyncMappingExpression<TSource, TDestination>(mapping);
 
+        public static AsyncMemberConfigurationExpression<TSource, TDestination, TMember> Async<TSource, TDestination, TMember>(this IMemberConfigurationExpression<TSource, TDestination, TMember> config)
+            => new AsyncMemberConfigurationExpression<TSource, TDestination, TMember>(config);
+
         public static async Task<TDestination> MapAsync<TDestination>(this IMapper mapper, object obj, CancellationToken token = default)
         {
             var context = new AsyncContext(token);
