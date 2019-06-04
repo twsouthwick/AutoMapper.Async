@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutoMapper
@@ -14,10 +15,35 @@ namespace AutoMapper
 
         }
 
+        public void MapFrom(Func<TSource, TDestination, CancellationToken, Task<TMember>> action)
+        {
+            MapFrom(new DelegateAsyncResolver(action));
+        }
+
         public void MapFrom<TValueResolver>()
             where TValueResolver : IAsyncValueResolver<TSource, TDestination, TMember>, new()
         {
-            _configuration.MapFrom(new AsyncValueResolver(new TValueResolver(), _configuration.DestinationMember));
+            MapFrom(new TValueResolver());
+        }
+
+        public void MapFrom(IAsyncValueResolver<TSource, TDestination, TMember> resolver)
+        {
+            _configuration.MapFrom(new AsyncValueResolver(resolver, _configuration.DestinationMember));
+        }
+
+        private class DelegateAsyncResolver : IAsyncValueResolver<TSource, TDestination, TMember>
+        {
+            private readonly Func<TSource, TDestination, CancellationToken, Task<TMember>> _func;
+
+            public DelegateAsyncResolver(Func<TSource, TDestination, CancellationToken, Task<TMember>> func)
+            {
+                _func = func;
+            }
+
+            public Task<TMember> ResolveAsync(TSource source, TDestination destination, TMember destMember, ResolutionContext context, CancellationToken token)
+            {
+                return _func(source, destination, token);
+            }
         }
 
         private class AsyncValueResolver : IValueResolver<TSource, TDestination, TMember>

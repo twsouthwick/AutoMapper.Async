@@ -55,6 +55,26 @@ namespace AutoMapper.Async.Tests
             Assert.Equal(a.Item1, b.Item1);
         }
 
+        [Fact]
+        public async Task SimpleAsyncValueResolverDelegate()
+        {
+            var mapper = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<A, B>()
+                    .ForMember(m => m.Item1, opt => opt.Async().MapFrom(async (src, dest, _) =>
+                    {
+                        await Task.Yield();
+                        return src.Item1;
+                    }));
+            }).CreateMapper();
+
+            var a = new A { Item1 = Guid.NewGuid().ToString() };
+
+            var b = await mapper.MapAsync<B>(a);
+
+            Assert.Equal(a.Item1, b.Item1);
+        }
+
 
         public class A
         {
