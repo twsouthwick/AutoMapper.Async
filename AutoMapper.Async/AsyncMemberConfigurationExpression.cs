@@ -23,24 +23,12 @@ namespace AutoMapper
         private class AsyncValueResolver : IValueResolver<TSource, TDestination, TMember>
         {
             private readonly IAsyncValueResolver<TSource, TDestination, TMember> _resolver;
-            private readonly MemberInfo _member;
+            private readonly Lazy<Action<TDestination, TMember>> _setter;
 
             public AsyncValueResolver(IAsyncValueResolver<TSource, TDestination, TMember> resolver, MemberInfo member)
             {
                 _resolver = resolver;
-                _member = member;
-            }
-
-            private void SetValue(TDestination destination, TMember member)
-            {
-                if (_member is PropertyInfo property)
-                {
-                    property.GetSetMethod().Invoke(destination, new object[] { member });
-                }
-                else
-                {
-                    throw new InvalidOperationException("Cannot set value");
-                }
+                _setter = new Lazy<Action<TDestination, TMember>>(member.CreateSetter<TDestination, TMember>, true);
             }
 
             public TMember Resolve(TSource source, TDestination destination, TMember destMember, ResolutionContext context)
@@ -57,7 +45,7 @@ namespace AutoMapper
             {
                 var result = await _resolver.ResolveAsync(source, destination, destMember, context, asyncContext.Token).ConfigureAwait(false);
 
-                SetValue(destination, result);
+                _setter.Value(destination, result);
             }
         }
     }
