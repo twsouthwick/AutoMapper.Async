@@ -75,7 +75,6 @@ namespace AutoMapper.Async.Tests
             Assert.Equal(a.Item1, b.Item1);
         }
 
-
         public class A
         {
             public string Item1 { get; set; }

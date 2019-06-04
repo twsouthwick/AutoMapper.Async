@@ -21,7 +21,6 @@ namespace AutoMapper
             var result = mapper.Map<TDestination>(obj, opts =>
             {
                 opts.Items.Add(ItemKey, context);
-
             });
 
             await context.WhenAllAsync().ConfigureAwait(false);

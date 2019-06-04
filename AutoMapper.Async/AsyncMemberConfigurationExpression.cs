@@ -12,7 +12,6 @@ namespace AutoMapper
         public AsyncMemberConfigurationExpression(IMemberConfigurationExpression<TSource, TDestination, TMember> configuration)
         {
             _configuration = configuration;
-
         }
 
         public void MapFrom(Func<TSource, TDestination, CancellationToken, Task<TMember>> action)
